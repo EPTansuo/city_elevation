@@ -1,0 +1,6 @@
+[submodule "code/opentopodata"]
+	path = code/opentopodata
+	url = https://github.com/ajnisbet/opentopodata
+[submodule "code/china_area"]
+	path = code/china_area
+	url = https://github.com/adyliu/china_area
