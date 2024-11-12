@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 import pandas as pd
 
@@ -37,7 +38,7 @@ def getCityList():
      - 对于直辖市，只获取该市的名称
      - 对于xxx区，则全部删去
     '''
-    data_file = "china_area/area_code_2024.csv"
+    data_file = "/home/han/Desktop/中国县市海拔/code/china_area/area_code_2024.csv"
     df_all = pd.read_csv(data_file,header=None,dtype=str)
     df_all.columns = ["code","name","level","pcode","category"]
 
@@ -47,12 +48,28 @@ def getCityList():
     #directCity = ['110000000000','120000000000','310000000000','500000000000']
     df = df[~df['code'].str.startswith(('11', '12', '31', '50'))]
     df = df[~df['name'].str.endswith('区')]
+    df = df[~df['name'].str.contains('省直辖县级行政区划|自治区直辖县级行政区划|中沙群岛的岛礁及其海域')]
 
     city_list = df['name'].tolist()
-    city_list.append(["北京市","天津市","上海市","重庆市"])
+    city_list.extend(["北京市", "天津市", "上海市", "重庆市"])
 
-    #return city_list
-    return ["北京市","天津市","上海市","重庆市"]
+    return city_list
+
+# def getCityList():
+#     '''
+#     获取县级和市级(2,3级)行政单位列表
+#     '''
+#     data_file = "/home/han/Desktop/中国县市海拔/code/china_area/area_code_2024.csv"
+#     df_all = pd.read_csv(data_file,header=None,dtype=str)
+#     df_all.columns = ["code","name","level","pcode","category"]
+#
+#     df = df_all[(df_all['level'] == '2') | (df_all['level'] == '3')] #县市级
+#
+#     df = df[~df['name'].str.contains('省直辖县级行政区划|自治区直辖县级行政区划|中沙群岛的岛礁及其海域|市辖区')]
+#
+#     city_list = df['name'].tolist()
+#
+#     return city_list
 
 def getElevation(lng:float,lat:float)->float:
     '''
@@ -73,6 +90,8 @@ def getElevation(lng:float,lat:float)->float:
     return -1000  #-1000对于海拔高度来说是不可能的
 
 
+# loc = getLocation("石家庄市")
+#print(loc)
 def save_to_csv(filename:str,city_list:list,loc_list:list,elevation_list:list):
     lng = [loc_[0] for loc_ in loc_list if loc_]
     lat = [loc_[1] for loc_ in loc_list if loc_]
@@ -81,16 +100,25 @@ def save_to_csv(filename:str,city_list:list,loc_list:list,elevation_list:list):
     df.to_csv(filename, index=False)
 
 
-
 if __name__ == "__main__":
     i = 0
     N = 200
-    loc_list = []
-    city_list = []
-    elevation_list = []
+    start_from_origin = True
+    if(start_from_origin):
+        loc_list = []
+        city_list = []
+        elevation_list = []
+    else:
+        df = pd.read_csv(f"out_4.csv")
+        loc_list = [list(pair) for pair in zip(df["longitude"], df["latitude"])]
+        city_list = df["city"].tolist()
+        elevation_list = df["elevation"].tolist()
     city_list_all = getCityList();
     for city in city_list_all:
         i=i+1;
+        if city in city_list:
+            print(f"skip {city}...")
+            continue;
         loc = getLocation(city)
         elevation = getElevation(loc[0],loc[1])
         loc_list.append(loc)
